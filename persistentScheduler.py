@@ -1,8 +1,27 @@
 #!/usr/bin/env python3
 
 """
-TODO:
-- implement threading with groups
+MIT License
+
+Copyright (c) 2022 Tizian Erlenberg
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 """
 
 import datetime
@@ -33,9 +52,8 @@ def strToDelta(input):
 
 def runFuntion(taskQueue, resultQueue):
     task= taskQueue.get()
-    task[1]()
-    time.sleep(5)
-    resultQueue.put(task[0])
+    task['function'](*task['args'])
+    resultQueue.put(task['name'])
 
 class Scheduler:
     def __init__(self, file=Path(), fileUpdateInterval=1):
@@ -76,16 +94,20 @@ class Scheduler:
         else:
             raise Exception("File not specified in Constructor")
 
-    def addTask(self, name, interval, function, group="", last=getTime()):
-        self.dict[name]= {"interval": interval, "last": last, "function": function, "group": group}
+    def addTask(self, name, interval, function, group="", last=getTime(), args=[]):
+        if name in self.dict.keys():
+            raise Exception("Taskname is already in use, choose differnt name")
+        if group == "":
+            group = name
+        self.dict[name]= {"interval": interval, "last": last, "function": function, "group": group, "args": args}
         self.threadingDispatcher[group]= queue.Queue()
         self.threadingCompleted[group]= queue.Queue()
         self.threadingCompleted[group].put(name)
-    def addTaskIfNotExists(self, name, interval, function, group=""):
+    def addTaskIfNotExists(self, name, interval, function, group="", args=[]):
         if not (name in self.fileDict.keys()):
             self.addTask(name, interval, function, group=group)
         else:
-            self.addTask(name, interval, function, last=self.fileDict[name]['last'], group=group)
+            self.addTask(name, interval, function, last=self.fileDict[name]['last'], group=group, args=args)
     def removeTask(self, name):
         self.dict.pop(name)
     def runPending(self):
@@ -96,7 +118,7 @@ class Scheduler:
                 if currentCompQueue.qsize() > 0:
                     completedTask = currentCompQueue.get()
                     self.dict[completedTask]["last"]= getTime()
-                    currentDispQueue.put([key, self.dict[key]['function']])
+                    currentDispQueue.put({'name': key, 'function': self.dict[key]['function'], 'args': self.dict[key]['args']})
                     self.runningThreads[self.dict[key]['group']] = threading.Thread(target=runFuntion, args=(currentDispQueue, currentCompQueue,))
                     self.runningThreads[self.dict[key]['group']].start()
     def runPendingAndUpdateFile(self):
@@ -108,19 +130,16 @@ class Scheduler:
         self.runPending()
         self.updateFile()
 
-def hello():
-    print("hello")
-    pass
+def hello(input):
+    print(input)
 
 def main():
-    test= Scheduler(file="test.json")
-    test.addTaskIfNotExists("task1", datetime.timedelta(seconds=1), hello, group="task1")
-    test.addTaskIfNotExists("task2", datetime.timedelta(seconds=4), hello, group="task2")
+    test= Scheduler(file="test.json", fileUpdateInterval=5)
+    test.addTaskIfNotExists("task1", datetime.timedelta(seconds=1), hello, group="task1", args=["task1"])
+    test.addTaskIfNotExists("task2", datetime.timedelta(seconds=4), hello, group="task2", args=["task2"])
     test.updateFile()
     while True:
         test.runPendingAndUpdateFile()
-        #print(test.threadingDispatcher)
-        print(threading.active_count())
         time.sleep(1)
 
 if __name__ == '__main__':
