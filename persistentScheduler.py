@@ -47,6 +47,19 @@ def runFunction(taskQueue, resultQueue):
     task['function'](*task['args'])
     resultQueue.put(task['name'])
 
+def every(multiplier=1):
+    return DeltaObject(multiplier=multiplier)
+
+class DeltaObject:
+    def __init__(self, multiplier=1):
+        self.seconds= datetime.timedelta(seconds=multiplier)
+        self.minutes= datetime.timedelta(minutes=multiplier)
+        self.hours= datetime.timedelta(hours=multiplier)
+        self.days= datetime.timedelta(days=multiplier)
+        self.weeks= datetime.timedelta(weeks=multiplier)
+        self.months= datetime.timedelta(days=multiplier*30)
+        self.years= datetime.timedelta(days=multiplier*365)
+
 class Scheduler:
     def __init__(self, file=Path(), fileUpdateInterval=1):
         self.dict= {}
@@ -129,8 +142,8 @@ def hello(input):
 
 def main():
     test= Scheduler(file="test.json", fileUpdateInterval=5)
-    test.addTaskIfNotExists("task1", datetime.timedelta(seconds=1), hello, group="task1", args=["task1"])
-    test.addTaskIfNotExists("task2", datetime.timedelta(seconds=4), hello, group="task2", args=["task2"])
+    test.addTaskIfNotExists("task1", every(1).seconds, hello, group="task1", args=["task1"])
+    test.addTaskIfNotExists("task2", every(5).seconds, hello, group="task2", args=["task2"])
     test.updateFile()
     while True:
         test.runPendingAndUpdateFile()
