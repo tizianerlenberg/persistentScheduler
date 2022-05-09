@@ -61,17 +61,11 @@ class Scheduler:
     def updateFile(self):
         if self.file != Path():
             with open(self.file, "w") as myFile:
-                self.fileDict= self.dict.copy()
-                for key in self.fileDict.keys():
-                    self.fileDict[key]= self.fileDict[key].copy()
-                    self.fileDict[key].pop('interval')
-                    self.fileDict[key].pop('function')
-                    self.fileDict[key]["last"]= self.fileDict[key]["last"]
-                tmpDict= self.fileDict.copy()
-                for key in tmpDict.keys():
-                    tmpDict[key]= tmpDict[key].copy()
-                    tmpDict[key]["last"]= timeToStr(tmpDict[key]["last"])
-                myFile.write(json.dumps(tmpDict))
+                self.fileDict= {}
+                for key in self.dict.keys():
+                    self.fileDict[key]= {}
+                    self.fileDict[key]["last"]= timeToStr(self.dict[key]["last"])
+                myFile.write(json.dumps(self.fileDict))
         else:
             raise Exception("File not specified in Constructor")
 
@@ -86,11 +80,11 @@ class Scheduler:
     def removeTask(self, name):
         self.dict.pop(name)
     def runPending(self):
-        for d in self.dict:
-            if (getTime() - self.dict[d]["last"]) > (self.dict[d]["interval"]):
-                print(f"doing {d}")
-                self.functions[self.dict[d]["function"]]()
-                self.dict[d]["last"]= getTime()
+        for key in self.dict.keys():
+            if (getTime() - self.dict[key]["last"]) > (self.dict[key]["interval"]):
+                print(f"doing {key}")
+                self.functions[self.dict[key]["function"]]()
+                self.dict[key]["last"]= getTime()
     def runPendingAndUpdateFile(self):
         for value in range(self.fileUpdateIntervalCursor, self.fileUpdateInterval):
             self.fileUpdateIntervalCursor += 1
