@@ -35,6 +35,7 @@ def strToDelta(input):
 class Scheduler:
     def __init__(self, file=Path(), fileUpdateInterval=1):
         self.dict= {}
+        self.fileDict= {}
         self.functions= {}
         self.fileUpdateInterval= fileUpdateInterval
         self.fileUpdateIntervalCursor= 0
@@ -46,22 +47,25 @@ class Scheduler:
 
         if not os.path.exists(self.file):
             with open(self.file, "w") as myFile:
-                myFile.write(json.dumps(self.dict))
+                myFile.write(json.dumps(self.fileDict))
 
         with open(self.file, "r") as myFile:
-            self.dict = json.loads(myFile.read())
+            self.fileDict = json.loads(myFile.read())
     def updateFile(self):
         if self.file != Path():
             with open(self.file, "w") as myFile:
-                myFile.write(json.dumps(self.dict))
+                self.fileDict= self.dict
+                myFile.write(json.dumps(self.fileDict))
         else:
             raise Exception("File not specified in Constructor")
-    def addTask(self, name, interval, function, group=""):
-        self.dict[name]= {"interval": deltaToStr(interval), "last": timeToStr(getTime()), "function": function.__name__}
+    def addTask(self, name, interval, function, group="", last=timeToStr(getTime())):
+        self.dict[name]= {"interval": deltaToStr(interval), "last": last, "function": function.__name__}
         self.functions[function.__name__]= function
     def addTaskIfNotExists(self, name, interval, function, group=""):
-        if not (name in self.dict.keys()):
+        if not (name in self.fileDict.keys()):
             self.addTask(name, interval, function)
+        else:
+            self.addTask(name, interval, function, last=self.fileDict[name]['last'])
     def removeTask(self, name):
         self.dict.pop(name)
     def runPending(self):
@@ -84,7 +88,8 @@ def hello():
 
 def main():
     test= Scheduler(file="test.json")
-    test.addTaskIfNotExists("task1", datetime.timedelta(seconds=2), hello)
+    test.addTaskIfNotExists("task1", datetime.timedelta(seconds=20), hello)
+    test.updateFile()
     while True:
         test.runPendingAndUpdateFile()
         time.sleep(1)
