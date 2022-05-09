@@ -9,6 +9,8 @@ import datetime
 import time
 import os
 import json
+import threading
+import queue
 from pathlib import Path, PurePosixPath
 from random import randint
 
@@ -36,7 +38,6 @@ class Scheduler:
     def __init__(self, file=Path(), fileUpdateInterval=1):
         self.dict= {}
         self.fileDict= {}
-        self.functions= {}
         self.fileUpdateInterval= fileUpdateInterval
         self.fileUpdateIntervalCursor= 0
 
@@ -70,8 +71,7 @@ class Scheduler:
             raise Exception("File not specified in Constructor")
 
     def addTask(self, name, interval, function, group="", last=getTime()):
-        self.dict[name]= {"interval": interval, "last": last, "function": function.__name__}
-        self.functions[function.__name__]= function
+        self.dict[name]= {"interval": interval, "last": last, "function": function}
     def addTaskIfNotExists(self, name, interval, function, group=""):
         if not (name in self.fileDict.keys()):
             self.addTask(name, interval, function)
@@ -83,7 +83,7 @@ class Scheduler:
         for key in self.dict.keys():
             if (getTime() - self.dict[key]["last"]) > (self.dict[key]["interval"]):
                 print(f"doing {key}")
-                self.functions[self.dict[key]["function"]]()
+                self.dict[key]["function"]()
                 self.dict[key]["last"]= getTime()
     def runPendingAndUpdateFile(self):
         for value in range(self.fileUpdateIntervalCursor, self.fileUpdateInterval):
