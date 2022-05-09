@@ -137,10 +137,16 @@ class Scheduler:
         self.runPending()
         self.updateFile()
 
+def runAtStart(function, args=[]):
+    myThread= threading.Thread(target=function, args=args)
+    myThread.start()
+
 def hello(input):
     print(input)
 
 def main():
+    runAtStart(hello, args=["testHello"])
+    time.sleep(5)
     test= Scheduler(file="test.json", fileUpdateInterval=5)
     test.addTaskIfNotExists("task1", every(1).seconds, hello, group="task1", args=["task1"])
     test.addTaskIfNotExists("task2", every(5).seconds, hello, group="task2", args=["task2"])
