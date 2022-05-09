@@ -42,15 +42,7 @@ def timeToStr(time):
 def strToTime(input):
     return datetime.datetime.fromisoformat(input)
 
-def deltaToStr(delta):
-    zerodate= datetime.datetime(1, 1, 1)
-    return timeToStr((zerodate + delta))
-
-def strToDelta(input):
-    zerodate= datetime.datetime(1, 1, 1)
-    return strToTime(input) - zerodate
-
-def runFuntion(taskQueue, resultQueue):
+def runFunction(taskQueue, resultQueue):
     task= taskQueue.get()
     task['function'](*task['args'])
     resultQueue.put(task['name'])
@@ -119,7 +111,7 @@ class Scheduler:
                     completedTask = currentCompQueue.get()
                     self.dict[completedTask]["last"]= getTime()
                     currentDispQueue.put({'name': key, 'function': self.dict[key]['function'], 'args': self.dict[key]['args']})
-                    self.runningThreads[self.dict[key]['group']] = threading.Thread(target=runFuntion, args=(currentDispQueue, currentCompQueue,))
+                    self.runningThreads[self.dict[key]['group']] = threading.Thread(target=runFunction, args=(currentDispQueue, currentCompQueue,))
                     self.runningThreads[self.dict[key]['group']].start()
     def runPendingAndUpdateFile(self, fileUpdateInterval=0):
         if fileUpdateInterval > 0:
