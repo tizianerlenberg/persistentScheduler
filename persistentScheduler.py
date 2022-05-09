@@ -121,7 +121,9 @@ class Scheduler:
                     currentDispQueue.put({'name': key, 'function': self.dict[key]['function'], 'args': self.dict[key]['args']})
                     self.runningThreads[self.dict[key]['group']] = threading.Thread(target=runFuntion, args=(currentDispQueue, currentCompQueue,))
                     self.runningThreads[self.dict[key]['group']].start()
-    def runPendingAndUpdateFile(self):
+    def runPendingAndUpdateFile(self, fileUpdateInterval=0):
+        if fileUpdateInterval > 0:
+            self.fileUpdateInterval= fileUpdateInterval
         for value in range(self.fileUpdateIntervalCursor, self.fileUpdateInterval):
             self.fileUpdateIntervalCursor += 1
             self.runPending()
