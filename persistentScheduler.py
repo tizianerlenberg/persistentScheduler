@@ -2,7 +2,6 @@
 
 """
 TODO:
-- implement adding functions to task
 - implement threading with groups
 """
 
@@ -36,6 +35,7 @@ def strToDelta(input):
 class Scheduler:
     def __init__(self, file=Path(), fileUpdateInterval=1):
         self.dict= {}
+        self.functions= {}
         self.fileUpdateInterval= fileUpdateInterval
         self.fileUpdateIntervalCursor= 0
 
@@ -56,17 +56,19 @@ class Scheduler:
                 myFile.write(json.dumps(self.dict))
         else:
             raise Exception("File not specified in Constructor")
-    def addTask(self, name, interval, group=""):
-        self.dict[name]= {"interval": deltaToStr(interval), "last": timeToStr(getTime())}
-    def addTaskIfNotExists(self, name, interval, group=""):
+    def addTask(self, name, interval, function, group=""):
+        self.dict[name]= {"interval": deltaToStr(interval), "last": timeToStr(getTime()), "function": function.__name__}
+        self.functions[function.__name__]= function
+    def addTaskIfNotExists(self, name, interval, function, group=""):
         if not (name in self.dict.keys()):
-            self.addTask(name, interval)
+            self.addTask(name, interval, function)
     def removeTask(self, name):
         self.dict.pop(name)
     def runPending(self):
         for d in self.dict:
             if (getTime() - strToTime(self.dict[d]["last"])) > strToDelta(self.dict[d]["interval"]):
                 print(f"doing {d}")
+                self.functions[self.dict[d]["function"]]()
                 self.dict[d]["last"]= timeToStr(datetime.datetime.now())
     def runPendingAndUpdateFile(self):
         for value in range(self.fileUpdateIntervalCursor, self.fileUpdateInterval):
@@ -77,9 +79,12 @@ class Scheduler:
         self.runPending()
         self.updateFile()
 
+def hello():
+    print("hello")
+
 def main():
     test= Scheduler(file="test.json")
-    test.addTaskIfNotExists("task1", datetime.timedelta(seconds=2))
+    test.addTaskIfNotExists("task1", datetime.timedelta(seconds=2), hello)
     while True:
         test.runPendingAndUpdateFile()
         time.sleep(1)
