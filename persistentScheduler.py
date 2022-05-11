@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# TODO: fix firstStart issue: last
+
 """
 MIT License
 
@@ -116,7 +118,7 @@ class Scheduler:
         self.threadingCompleted[group].put(name)
     def addTaskIfNotExists(self, name, interval, function, group="", args=[], delay=600):
         if not (name in self.fileDict.keys()):
-            self.addTask(name, interval, function, group=group)
+            self.addTask(name, interval, function, group=group, args=args, delay=delay)
         else:
             self.addTask(name, interval, function, last=self.fileDict[name]['last'], group=group, args=args, delay=delay)
     def removeTask(self, name):
