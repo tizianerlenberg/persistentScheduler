@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# TODO: fix firstStart issue: last
-
 """
 MIT License
 
@@ -133,8 +131,11 @@ class Scheduler:
                     if not (self.dict[key]['group'] in self.groupFirstStart):
                         delay = randint(0, self.dict[key]['delay'])
                         self.groupFirstStart.append([self.dict[key]['group']])
-                    completedTask = currentCompQueue.get()
-                    self.dict[completedTask]["last"]= getTime()
+                        completedTask = currentCompQueue.get()
+                    else:
+                        completedTask = currentCompQueue.get()
+                        self.dict[completedTask]["last"]= getTime()
+
                     currentDispQueue.put({'name': key, 'function': self.dict[key]['function'], 'args': self.dict[key]['args']})
                     self.runningThreads[self.dict[key]['group']] = threading.Thread(target=runFunction, args=(currentDispQueue, currentCompQueue, delay,))
                     self.runningThreads[self.dict[key]['group']].start()
